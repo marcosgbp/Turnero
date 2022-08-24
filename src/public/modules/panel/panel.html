@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Anton&display=swap"
+      rel="stylesheet"
+    />
+    <link href="./assets/bootstrap-5.0.2/css/bootstrap.css" rel="stylesheet" />
+    <link rel="stylesheet" href="./modules/panel/panel.css">
+    <title>Hello, world!</title>
+  </head>
+  <body>
+    <div class="container border border-primary">
+      <div class="row text-center">
+        <div class="col-3 border border-primary">
+            <h1>Pendientes</h1>
+            <h2 id="pendientes">0</h2>
+        </div>
+        <div class="col-6 border border-primary">
+            <img src="./assets/img/logo.jpg" class="img-fluid" alt="Marijoa">
+        </div>
+        <div class="col-3 border border-primary">
+            21:00:00
+        </div>
+      </div>
+      <div class="row align-items-center">
+        <div class="col-3 border border-primary" style="height:100vh;">
+          Ultimo 3
+        </div>
+        <div class="col-6 border border-primary text-center" style="height:100vh;">
+          <h1 id="turno_actual">Turno: 6</h1>
+        </div>
+        <div class="col-3 border border-primary" style="height:100vh;">
+          Cotizaciones
+        </div>
+      </div>
+    </div>
+   
+    <script src="/socket.io/socket.io.min.js"></script>
+    <script src="./modules/panel/panel.js"></script>
+    <script src="./assets/bootstrap-5.0.2/js/bootstrap.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  </body>
+</html>
