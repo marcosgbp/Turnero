@@ -41,6 +41,19 @@ app.get('/control', (req, res) => {
 });
 
 io.on('connection', (socket) => {
+    //Cada vez que se actualiza panel.html le devuelvo el ultimo número que atendí
+    socket.on("cliente:UltimoTurno", () => {
+        conexion.query('SELECT MAX(turno) as ultimo_turno FROM turnos WHERE estado = "Atendido"', (error, results, fields) => {
+            if(error) throw error;
+            socket.emit("servidor:UltimoTurno", results[0].ultimo_turno);
+        });
+        //Cuento cuanto pendientes hay por el estado y por la fecha
+        conexion.query('SELECT COUNT(id_turno) as pendientes FROM turnos WHERE DATE_FORMAT(fecha_hora, "%Y-%m-%d") = DATE_FORMAT(NOW(), "%Y-%m-%d") AND estado = "Pendiente"', (error, results, fields) => {
+            if (error) throw error;
+            let pendientes = parseInt(results[0].pendientes);
+            socket.emit("servidor:enviarPendientes", pendientes);
+        });
+    });
     socket.on("cliente:buscarUltTurno", () => {
         conexion.query('SELECT MAX(turno) as ultimo_turno FROM turnos', (error, results, fields) => {
             if (error) throw error;
@@ -90,7 +103,7 @@ io.on('connection', (socket) => {
         });
     });
     //Repetir Turno
-    socket.on("cliente:RepetirTurno", ()=>{
+    socket.on("cliente:RepetirTurno", () => {
         conexion.query('SELECT max(turno) turnoRepetido FROM turnos WHERE DATE_FORMAT(fecha_hora, "%d-%m-%Y") = DATE_FORMAT(NOW(), "%d-%m-%Y") AND estado = "Atendido"',(error, results, fields) => {
             if(error){
                 console.log("Error en la busqueda del ultimo turno");
