@@ -15,27 +15,16 @@ socket.on("servidor:llamarTurno", (turno) => {
     if(turno != null){
       document.querySelector("#turno_actual").innerHTML=turno;
       document.querySelector("#turno_actual").style.color = "black";
-      let mensaje = new SpeechSynthesisUtterance();
+      const audios = new Audio('../../src/public/assets/audios/'+turno+'.wav');
+      audios.play();
+      /*let mensaje = new SpeechSynthesisUtterance();
       let voz = window.speechSynthesis.getVoices();
       mensaje.voice = voz[2];
       mensaje.voiceURI = "Microsoft Pablo - Spanish (Spain)";
       mensaje.lang = "es-Es";
       mensaje.text = `Turno, ${turno}`;
-      speechSynthesis.speak(mensaje);
+      speechSynthesis.speak(mensaje);*/
     }
-        /*Swal.fire({
-            html: `
-            <div class="container">
-                <h2 class="alert alert-warning" role="alert">No hay Turnos para llamar</h2>
-            </div>`,
-            showClass: {
-              popup: 'animate__animated animate__fadeInDown'
-            },
-            hideClass: {
-              popup: 'animate__animated animate__fadeOutUp'
-            },
-            timer: 3000
-          });*/
 });
 
 //Recibo el turno repedido para mostrar en el panel

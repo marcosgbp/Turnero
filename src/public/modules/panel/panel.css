@@ -1,0 +1,28 @@
+body {
+    background: antiquewhite;
+
+    font-family: "Anton", sans-serif;
+}
+.contenedor {
+    height: 100%;
+}
+.turno_actual h1 {
+    font-size: 200px;
+}
+
+.cabecera {
+    height: 20%;
+}
+
+.cuerpo {
+    height: 60%;
+}
+
+.footer {
+    height: 20%;
+    /*  poner footer abajo 
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;*/
+}
