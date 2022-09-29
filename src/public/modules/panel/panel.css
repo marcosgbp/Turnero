@@ -1,28 +1,23 @@
 body {
-    background: antiquewhite;
-
-    font-family: "Anton", sans-serif;
+    background: #f3cb1c;
+    font-family: Arial, sans-serif;
+    font-weight: bolder;
 }
 .contenedor {
     height: 100%;
 }
-.turno_actual h1 {
+#turno_letra {
     font-size: 200px;
 }
 
-.cabecera {
-    height: 20%;
+#turno_actual{
+    font-size: 300px;
 }
-
-.cuerpo {
-    height: 60%;
-}
-
 .footer {
-    height: 20%;
-    /*  poner footer abajo 
-    position: fixed;
-    left: 0;
-    bottom: 0;
-    width: 100%;*/
+    font-size: 60px;
+}
+.hora, #pendientes {
+    font-size: 50px;
+    font-weight: bolder;
+    padding-top: 30px;
 }

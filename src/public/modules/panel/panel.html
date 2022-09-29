@@ -14,25 +14,28 @@
 
 <body>
 <div class="contenedor">
-  <div class="row text-center cabecera">
+  <div class="row text-center py-4">
     <div class="col-3">
       <h2 id="pendientes">0</h2>
     </div>
     <div class="col-6">
-      <img src="./assets/img/logo.jpg" class="img-fluid" alt="Marijoa">
+      <img src="./assets/img/logo.png" class="img-fluid" alt="Marijoa">
     </div>
-    <div class="col-3">
+    <div class="col-3 hora">
       21:00:00
     </div>
   </div>
-  <div class="row text-center cuerpo border-bottom py-4">
+  <div class="row text-center cuerpo py-2">
     <div class="col-12 col-sm-12 mt-5 turno_actual">
-      <h1>TURNO:<span id="turno_actual"></span></h1>
+      <h1 id="turno_letra">TURNO</h1>
+      <h2 id="turno_actual"></h2>
     </div>
   </div>
   <div class="row text-center footer">
     <div class="col-12">
-      Dolar: 7000gs | Pesos: 2gs | Real: 2000gs
+      <span><img class="img-fluid p-2" width="100" src="./assets/img/eeuu.png" alt="eeuu"></span><span id="U">#</span>
+      <span><img class="img-fluid p-2" width="100" src="./assets/img/brasil.png" alt="brasil"></span><span id="R">#</span>
+      <span><img class="img-fluid p-2" width="100" src="./assets/img/argentina.png" alt="argentina"></span><span id="P">#</span>
     </div>
   </div>
 
@@ -42,6 +45,7 @@
   <script src="./modules/panel/panel.js"></script>
   <script src="./assets/bootstrap-5.0.2/js/bootstrap.js"></script>
   <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.1/howler.min.js"></script>
 </body>
 
 </html>
