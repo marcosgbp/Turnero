@@ -13,45 +13,40 @@ socket.on("servidor:enviarPendientes", (pendientes) => {
 });
 
 
-socket.on("servidor:UltimoTurno", (ultimo_turno) => {
-  document.querySelector("#turno_actual").innerHTML = ultimo_turno;
+socket.on("servidor:UltimoTurno", (datos_turno) => {
+  document.querySelector("#turno_actual").innerHTML = datos_turno.ultimo_turno;
+  document.querySelector("#turno_actual").dataset.idturno = datos_turno.id_turno;
+  document.querySelector("#turno_actual").dataset.repeticion = datos_turno.repeticion;
 });
 
 //Recibo el turno a llamado para mostrar en el panel
-socket.on("servidor:llamarTurno", (turno) => {
-  if (turno != null) {
-    document.querySelector("#turno_actual").innerHTML = turno;
-    document.querySelector("#turno_actual").style.color = "black";
-    playAudio(turno);
-    /*let mensaje = new SpeechSynthesisUtterance();
-      let voz = window.speechSynthesis.getVoices();
-      mensaje.voice = voz[2];
-      mensaje.voiceURI = "Microsoft Pablo - Spanish (Spain)";
-      mensaje.lang = "es-Es";
-      mensaje.text = `Turno, ${turno}`;
-      speechSynthesis.speak(mensaje);*/
+socket.on("servidor:llamarTurno", (datos_cli) => {
+  if (datos_cli != null || datos_cli.length > 0) {
+      document.querySelector("#turno_actual").innerHTML = datos_cli.turno;
+      document.querySelector("#turno_actual").dataset.idturno = datos_cli.id_turno;
+      document.querySelector("#turno_actual").dataset.repeticion = datos_cli.repeticion;
+      document.querySelector("#turno_actual").style.color = "black";
+      document.querySelector(".turno_actual").style.color = "black";
+      //playAudio(datos_cli.turno); 
   }
 });
 
 //Recibo el turno repedido para mostrar en el panel
-socket.on("servidor:RepetirTurno", (turnoRepetido) => {
-  console.log(turnoRepetido);
-  if (turnoRepetido != null) {
-    document.querySelector("#turno_actual").innerHTML = turnoRepetido;
-    document.querySelector(".turno_actual").style.color = "red";
-    playAudio(turnoRepetido);
-    /*let mensaje = new SpeechSynthesisUtterance();
-    let voz = window.speechSynthesis.getVoices();
-    mensaje.voice = voz[2];
-    mensaje.voiceURI = "Microsoft Pablo - Spanish (Spain)";
-    mensaje.lang = "es-Es";
-    mensaje.text = `Turno, ${turnoRepetido}`;
-    speechSynthesis.speak(mensaje);*/
+socket.on("servidor:RepetirTurno", (datos_rep) => {
+  console.log(datos_rep);
+  if (datos_rep.length>0) {
+      document.querySelector("#turno_actual").innerHTML = datos_rep.turno_repetido;
+      document.querySelector("#turno_actual").dataset.repeticion = datos_rep.repeticion
+      document.querySelector(".turno_actual").style.color = "red";
+      document.querySelector("#turno_actual").style.color = "red";
+      document.querySelector('#turno_actual').style.fontSize = '400px';
+      setTimeout(function(){document.querySelector('#turno_actual').style.fontSize = '300px';},5000)
+      //playAudio(turnoRepetido);
   }
 });
 
 //Recibe el número y ejecuta el audio dependiendo el turno recibido
-function playAudio(turno) {
+/*function playAudio(turno) {
   try {
     const audioTurno = new Audio("./assets/audios/turno.wav");
     const audioNumero = new Audio("./assets/audios/" + turno + ".wav");
@@ -60,7 +55,7 @@ function playAudio(turno) {
   } catch (error) {
     console.log(error);
   }
-}
+}*/
 
 //Formateo y mustro la hora
 function getHora() {
