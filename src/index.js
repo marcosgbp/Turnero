@@ -1,11 +1,11 @@
 import express from "express";
 import { Server as WebSocketServer } from "socket.io";
 import http from "http";
-
 const app = express();
 const server = http.createServer(app);
 const io = new WebSocketServer(server);
 const mysql = require("mysql");
+const cors = require('cors');
 
 /**
  * Establecemos la conexiòn a la base de datos
@@ -27,6 +27,36 @@ conexion.connect(function (err) {
 });
 
 app.use(express.static(__dirname + "/public"));
+
+//Valido los cors para el api
+app.use(cors({
+  origin: '*'
+}));
+
+app.get('/getTurno/:turno', cors(),function (req, res, next) {
+  let turno = req.params.turno;
+  let usuario = req.query.usuario;
+  conexion.query(`SELECT * FROM turnos WHERE turno = ${turno} AND DATE_FORMAT(fecha_hora, "%Y-%m-%d") = DATE_FORMAT(NOW(), "%Y-%m-%d") ORDER BY id_turno DESC LIMIT 1`,(error, results, fields) =>{
+    if(error){
+      console.log("Error al solicitar turno");
+    }else{
+      if(results.length>0){
+        results[0].msg="Ok";
+        let id_turno = results[0].id_turno;
+          conexion.query(`UPDATE turnos SET estado = "Atendido", fecha_hora_atendido = current_timestamp, usuario = '${usuario}' WHERE id_turno = ${id_turno}`,(error, results, fields) => {
+            if (error) {
+              console.log("Error al actualizar el estado");
+            } else {
+              console.log("Todo un exito en la actualización del estado");
+            }
+          }
+        );
+        res.json(results);
+      }
+    }
+  });
+});
+   
 
 //Rutas
 app.get("/", (req, res) => {
@@ -157,12 +187,7 @@ io.on("connection", (socket) => {
             };
             socket.broadcast.emit("servidor:llamarTurno", datos_cli);
             socket.broadcast.emit("servidor:LlamarVozTurno", turno);
-            conexion.query(
-              'UPDATE turnos SET estado = "Atendido", repeticion = ' +
-                repeticion +
-                " WHERE id_turno =" +
-                id_turno,
-              (error, results, fields) => {
+            conexion.query('UPDATE turnos SET estado = "Atendido", repeticion = ' +repeticion +", fecha_hora_llamada = current_timestamp WHERE id_turno =" +id_turno,(error, results, fields) => {
                 if (error) {
                   console.log("Error al actualizar la repetición");
                 } else {
@@ -174,9 +199,7 @@ io.on("connection", (socket) => {
             );
 
             //Cuento cuanto pendientes hay por el estado y por la fecha
-            conexion.query(
-              'SELECT COUNT(id_turno) as pendientes FROM turnos WHERE DATE_FORMAT(fecha_hora, "%Y-%m-%d") = DATE_FORMAT(NOW(), "%Y-%m-%d") AND estado = "Pendiente"',
-              (error, results, fields) => {
+            conexion.query('SELECT COUNT(id_turno) as pendientes FROM turnos WHERE DATE_FORMAT(fecha_hora, "%Y-%m-%d") = DATE_FORMAT(NOW(), "%Y-%m-%d") AND estado = "Pendiente"',(error, results, fields) => {
                 //console.log(results[0].pendientes)
                 if (error) {
                   console.log("Error en la lectura de pendientes " + error);
@@ -207,6 +230,7 @@ io.on("connection", (socket) => {
               `UPDATE turnos SET repeticion = ${repeticion} WHERE id_turno = ${results[0].id_turno}`
             );
             //Reproducir audio
+            socket.broadcast.emit("servidor:LlamarVozTurno", results[0].turno);
           }
         }
       }
