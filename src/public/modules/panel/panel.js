@@ -20,7 +20,8 @@ socket.on("servidor:UltimoTurno", (datos_turno) => {
 });
 
 //Recibo el turno a llamado para mostrar en el panel
-socket.on("servidor:llamarTurno", (datos_cli) => {
+socket.on("servidor:llamarTurnoPanel", (datos_cli) => {
+  console.log(datos_cli)
   if (datos_cli != null || datos_cli.length > 0) {
       document.querySelector("#turno_actual").innerHTML = datos_cli.turno;
       document.querySelector("#turno_actual").dataset.idturno = datos_cli.id_turno;

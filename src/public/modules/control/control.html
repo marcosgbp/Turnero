@@ -16,15 +16,33 @@
   <body>
     <div class="container">
       <div class="text-center">
-         <div class="card">
+         <div class="card mt-5">
           <div class="card-header">
-            Control           
+            <h1>Panel de Control Turnero</h1>            
           </div>
-          <div class="body">
+          <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <h3>Pendientes</h3>
+                  <h4 class="pendientes">
+
+                  </h4>
+                </div>
+                <div class="col-md-6">
+                  <h3>Turno Actual</h3>
+                  <h4 class="turno_actual">
+                    
+                  </h4>
+                </div>
+              </div>
+          </div>
+          <div class="card-footer">
             <div class="row">
-              <button class="btn btn-warning" id="btn-anterior">Anterior</button>
-              <button class="btn btn-info" id="btn-repetir" data-idturno="" data-repeticion="">Repetir</button>
-              <button class="btn btn-primary" id="btn-llamar">Llamar</button>
+              <div class="col">
+                <button class="btn btn-info" id="btn-repetir" data-idturno="" data-repeticion="">Repetir</button>
+                <button class="btn btn-primary" id="btn-llamar">Llamar</button>
+              </div>
+
             </div>
           </div>
          </div>

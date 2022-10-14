@@ -79,15 +79,13 @@ app.get("/control", (req, res) => {
 io.on("connection", (socket) => {
   //Cada vez que se actualiza panel.html le devuelvo el ultimo número que atendí
   socket.on("cliente:UltimoTurno", () => {
-    conexion.query(
-      'SELECT id_turno, turno as ultimo_turno, repeticion FROM turnos WHERE DATE_FORMAT(fecha_hora, "%Y-%m-%d") = DATE_FORMAT(NOW(), "%Y-%m-%d") AND estado = "Atendido" ORDER BY id_turno desc limit 1',
+    conexion.query('SELECT id_turno, turno as ultimo_turno, repeticion FROM turnos WHERE DATE_FORMAT(fecha_hora, "%Y-%m-%d") = DATE_FORMAT(NOW(), "%Y-%m-%d") AND estado = "Atendido" ORDER BY id_turno desc limit 1',
       (error, results, fields) => {
         if (error) throw error;
         let resultado =
           results.length >= 1 ? parseInt(results[0].ultimo_turno) : 0;
         let id_turno = results.length >= 1 ? parseInt(results[0].id_turno) : 0;
-        let repeticion =
-          results.length >= 1 ? parseInt(results[0].repeticion) : 0;
+        let repeticion = results.length >= 1 ? parseInt(results[0].repeticion) : 0;
         let datos_turno = {
           id_turno: id_turno,
           ultimo_turno: resultado,
@@ -97,8 +95,7 @@ io.on("connection", (socket) => {
       }
     );
     //Cuento cuanto pendientes hay por el estado y por la fecha
-    conexion.query(
-      'SELECT COUNT(id_turno) as pendientes FROM turnos WHERE DATE_FORMAT(fecha_hora, "%Y-%m-%d") = DATE_FORMAT(NOW(), "%Y-%m-%d") AND estado = "Pendiente"',
+    conexion.query('SELECT COUNT(id_turno) as pendientes FROM turnos WHERE DATE_FORMAT(fecha_hora, "%Y-%m-%d") = DATE_FORMAT(NOW(), "%Y-%m-%d") AND estado = "Pendiente"',
       (error, results, fields) => {
         if (error) throw error;
         let pendientes = parseInt(results[0].pendientes);
@@ -107,8 +104,7 @@ io.on("connection", (socket) => {
     );
   });
   socket.on("cliente:buscarUltTurno", (input_ci) => {
-    conexion.query(
-      "SELECT id_turno, turno as ultimo_turno FROM turnos WHERE DATE_FORMAT(fecha_hora, '%Y-%m-%d') = DATE_FORMAT(NOW(), '%Y-%m-%d') order by id_turno desc limit 1",
+    conexion.query("SELECT id_turno, turno as ultimo_turno FROM turnos WHERE DATE_FORMAT(fecha_hora, '%Y-%m-%d') = DATE_FORMAT(NOW(), '%Y-%m-%d') order by id_turno desc limit 1",
       (error, results, fields) => {
         if (error) throw error;
         let ultTurno = results.length >= 1 ? results[0].ultimo_turno : 0;
@@ -139,7 +135,7 @@ io.on("connection", (socket) => {
                     let hoy = new Date();
                     let datos_cli = {
                       turno: turno,
-                      nombre: nombre,
+                      nombre: nombre==="SIN NOMBRE"?"":nombre,
                       ci_ruc: ci_ruc,
                       fecha: getFecha(),
                     };
@@ -179,15 +175,14 @@ io.on("connection", (socket) => {
               turno: turno,
               repeticion: repeticion,
             };
-            socket.broadcast.emit("servidor:llamarTurno", datos_cli);
+           // socket.emit("servidor:llamarTurnoControl", datos_cli);
             socket.broadcast.emit("servidor:LlamarVozTurno", turno);
+            socket.emit("servidor:llamarTurnoPanel", datos_cli);
             conexion.query('UPDATE turnos SET estado = "Atendido", repeticion = ' +repeticion +", fecha_hora_llamada = current_timestamp WHERE id_turno =" +id_turno,(error, results, fields) => {
                 if (error) {
                   console.log("Error al actualizar la repetición");
                 } else {
-                  console.log(
-                    "Todo un exito en la actualización de la repetición"
-                  );
+                  console.log("Todo un exito en la actualización de la repetición");
                 }
               }
             );
@@ -199,7 +194,7 @@ io.on("connection", (socket) => {
                   console.log("Error en la lectura de pendientes " + error);
                 } else {
                   let pendientes = parseInt(results[0].pendientes);
-                  socket.broadcast.emit("servidor:enviarPendientes",pendientes);
+                  socket.emit("servidor:enviarPendientes",pendientes);
                 }
               }
             );
@@ -255,32 +250,39 @@ function Imprimir(datos_cli){
     let codigo_bar = datos_cli.turno.toString();
     let options = {
       width: 5,
-      height: 150,
+      height: 190,
       includeParity: false,
       position: "OFF",
       font:"B"
     }
-    //const options = { encoding: "GB18030" /* default */ }
+    //Nombre para el ticket
+    let nombre1 = cortarNombre(datos_cli.nombre,1);
+    let nombre2 = cortarNombre(datos_cli.nombre,2);
+    let apellido1 = cortarNombre(datos_cli.nombre, 3);
+    let apellido2 = cortarNombre(datos_cli.nombre, 4);
+
+    const options_fonts = { encoding: "ISO-8859-1" /* default */ }
     const tux = path.join(__dirname, '/public/assets/img/logo_ticket.png');
-    const printer = new escpos.Printer(device, options);
+    const printer = new escpos.Printer(device, options_fonts);
     escpos.Image.load(tux, function(image){
     device.open(function(error){
       printer.align('CT')
+      .size(1, 1)
+      .text("¡Gracias por elegirnos!\n")
       .image(image, 's8')
-
       .then(() => { 
          printer.font('A')
          printer.align('CT')
          printer.size(1, 2)
          printer.text("\n");
          printer.text("...Bienvenido...");
-         printer.text("\n");
-         printer.text(cortarNombre(datos_cli.nombre));
-         printer.text(cortarApellido(datos_cli.nombre));
+         printer.text(nombre1!=""?"\n":"");
          printer.size(1, 1)
-         printer.text("Ingreso al local");
-         printer.text(datos_cli.fecha)
-         printer.text("\n");
+         printer.text(nombre1+" "+nombre2);
+         printer.text(apellido1+" "+apellido2);
+         printer.text(nombre1!=""?"\n":"");
+         //printer.text("Ingreso al local");
+         //printer.text(datos_cli.fecha)
          printer.size(1, 2)
          printer.text("Su turno es:");
          printer.text("\n");
@@ -293,25 +295,19 @@ function Imprimir(datos_cli){
     });
   });
 }
-function cortarNombre(nombre){
+function cortarNombre(nombre, num){
   let nombre_aux = nombre.split(' ');
-  if(nombre[0]===undefined || nombre[0]===null || nombre[0]===""){
-    nombre[0]=" ";
-  }
-  if(nombre[1]===undefined || nombre[1]===null || nombre[1]===""){
-    nombre[1]=" "
-  }
-  return nombre_aux[0]+" "+nombre_aux[1];
+    if(nombre_aux[(num-1)]==undefined){
+      nombre_aux[(num-1)]="";
+    }
+  return nombre_aux[(num-1)];
 }
-function cortarApellido(nombre){
+function cortarApellido(nombre, num){
   let nombre_aux = nombre.split(' ');
-  if(nombre[2]===undefined || nombre[2]===null || nombre[2]===""){
-    nombre[2]=" ";
+  if(nombre_aux[(num-1)]===undefined){
+    nombre_aux[(num-1)]="";
   }
-  if(nombre[3]===undefined || nombre[3]===null || nombre[3]===""){
-    nombre[3]=" "
-  }
-  return nombre_aux[2]+" "+nombre_aux[3];
+  return nombre_aux[(num-1)];
 }
 function getFecha() {
   let fechaImprimible = "";
