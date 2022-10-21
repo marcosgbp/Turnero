@@ -1,0 +1,14 @@
+.btn{
+    color: white;
+    font-size: 25px;
+}
+body {
+    background-color: #f3cb1c;
+}
+
+.card {
+    box-shadow: 0 0 10px 5px;
+}
+h1, h3, h4{
+    font-weight: 700;
+}

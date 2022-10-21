@@ -12,6 +12,9 @@ socket.on("servidor:enviarPendientes", (pendientes) => {
   document.querySelector("#pendientes").innerHTML = pendientes;
 });
 
+socket.on("servidor:enviarPendientesPanel", (pendientes) => {
+  document.querySelector("#pendientes").innerHTML = pendientes;
+});
 
 socket.on("servidor:UltimoTurno", (datos_turno) => {
   document.querySelector("#turno_actual").innerHTML = datos_turno.ultimo_turno;
@@ -33,17 +36,13 @@ socket.on("servidor:llamarTurnoPanel", (datos_cli) => {
 });
 
 //Recibo el turno repedido para mostrar en el panel
-socket.on("servidor:RepetirTurno", (datos_rep) => {
-  console.log(datos_rep);
-  if (datos_rep.length>0) {
-      document.querySelector("#turno_actual").innerHTML = datos_rep.turno_repetido;
-      document.querySelector("#turno_actual").dataset.repeticion = datos_rep.repeticion
+socket.on("servidor:RepetirTurno", (turno) => {
+
+      document.querySelector("#turno_actual").innerHTML = turno;
       document.querySelector(".turno_actual").style.color = "red";
       document.querySelector("#turno_actual").style.color = "red";
       document.querySelector('#turno_actual').style.fontSize = '400px';
       setTimeout(function(){document.querySelector('#turno_actual').style.fontSize = '300px';},5000)
-      //playAudio(turnoRepetido);
-  }
 });
 
 //Recibe el número y ejecuta el audio dependiendo el turno recibido

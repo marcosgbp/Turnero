@@ -1,6 +1,7 @@
 import express from "express";
 import { Server as WebSocketServer } from "socket.io";
 import http from "http";
+
 const app = express();
 const server = http.createServer(app);
 const io = new WebSocketServer(server);
@@ -8,9 +9,11 @@ const mysql = require("mysql");
 const cors = require('cors');
 const path = require('path');
 const escpos = require('escpos');
+const fetch = require('node-fetch');
 // install escpos-usb adapter module manually
 escpos.USB = require('escpos-usb');
 
+const API_MARIJOA_PRO = "http://sistema.marijoa/marijoa/utils/turnero/RestControllerTurno.php?action=";
 
 /**
  * Establecemos la conexiòn a la base de datos
@@ -32,6 +35,7 @@ conexion.connect(function (err) {
 });
 
 app.use(express.static(__dirname + "/public"));
+
 
 //Valido los cors para el api
 app.use(cors({
@@ -63,8 +67,35 @@ app.get('/getTurno/:turno', cors(),function (req, res, next) {
     }
   });
 });
-   
 
+//Api para obtener y actualizar clientes desde MarijoaPro
+app.get('/getClientes/:clientes', cors(), function(req, res, next){
+  console.log(req.params.cod_cli)
+});
+//setInterval(function(){getClientes()},10000);
+function getClientes(){
+  fetch(`${API_MARIJOA_PRO}getClientesModificados&suc=02`)
+    .then(res => res.json())
+    .then(clientes => {
+      for(let i = 0; i< clientes.length; i++){
+        conexion.query(`SELECT * FROM clientes WHERE cod_cli = '${clientes[i].cod_cli}'`,(error, results, fields)=>{
+          if (error) throw error;
+          if(results.length>0){
+            conexion.query(`UPDATE clientes SET tipo_doc = '${clientes[i].tipo_doc}', ci_ruc = '${clientes[i].ci_ruc}', nombre = '${clientes[i].nombre}'  WHERE cod_cli = '${clientes[i].cod_cli}'`,(err, results, fields)=>{
+              if(err) throw err;
+              console.log("Cliente modificado...");
+            })
+          }else{
+            conexion.query(`INSERT INTO clientes(cod_cli, tipo_doc, ci_ruc, nombre) VALUES ('${clientes[i].cod_cli}', '${clientes[i].tipo_doc}', '${clientes[i].ci_ruc}', '${clientes[i].nombre}');`,(err, results, fields)=>{
+              if(err) throw err;
+              console.log("Cliente registrado...");
+            });
+          }
+        });
+      }
+    })
+    .catch(err => console.log(err));
+}
 //Rutas
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/public/modules/pulsador/pulsador.html");
@@ -82,8 +113,7 @@ io.on("connection", (socket) => {
     conexion.query('SELECT id_turno, turno as ultimo_turno, repeticion FROM turnos WHERE DATE_FORMAT(fecha_hora, "%Y-%m-%d") = DATE_FORMAT(NOW(), "%Y-%m-%d") AND estado = "Atendido" ORDER BY id_turno desc limit 1',
       (error, results, fields) => {
         if (error) throw error;
-        let resultado =
-          results.length >= 1 ? parseInt(results[0].ultimo_turno) : 0;
+        let resultado = results.length >= 1 ? parseInt(results[0].ultimo_turno) : 0;
         let id_turno = results.length >= 1 ? parseInt(results[0].id_turno) : 0;
         let repeticion = results.length >= 1 ? parseInt(results[0].repeticion) : 0;
         let datos_turno = {
@@ -175,9 +205,12 @@ io.on("connection", (socket) => {
               turno: turno,
               repeticion: repeticion,
             };
-           // socket.emit("servidor:llamarTurnoControl", datos_cli);
+            //
+            socket.broadcast.emit("servidor:llamarTurnoPanel", datos_cli);
+            socket.emit("servidor:llamarTurnoControl", datos_cli);
+            //Reproduce el audio para el turno
             socket.broadcast.emit("servidor:LlamarVozTurno", turno);
-            socket.emit("servidor:llamarTurnoPanel", datos_cli);
+            
             conexion.query('UPDATE turnos SET estado = "Atendido", repeticion = ' +repeticion +", fecha_hora_llamada = current_timestamp WHERE id_turno =" +id_turno,(error, results, fields) => {
                 if (error) {
                   console.log("Error al actualizar la repetición");
@@ -186,7 +219,7 @@ io.on("connection", (socket) => {
                 }
               }
             );
-
+            
             //Cuento cuanto pendientes hay por el estado y por la fecha
             conexion.query('SELECT COUNT(id_turno) as pendientes FROM turnos WHERE DATE_FORMAT(fecha_hora, "%Y-%m-%d") = DATE_FORMAT(NOW(), "%Y-%m-%d") AND estado = "Pendiente"',(error, results, fields) => {
                 //console.log(results[0].pendientes)
@@ -195,6 +228,7 @@ io.on("connection", (socket) => {
                 } else {
                   let pendientes = parseInt(results[0].pendientes);
                   socket.emit("servidor:enviarPendientes",pendientes);
+                  socket.broadcast.emit("servidor:enviarPendientesPanel",pendientes);
                 }
               }
             );
@@ -220,6 +254,7 @@ io.on("connection", (socket) => {
             );
             //Reproducir audio
             socket.broadcast.emit("servidor:LlamarVozTurno", results[0].turno);
+            socket.broadcast.emit("servidor:RepetirTurno", results[0].turno);
           }
         }
       }
@@ -249,24 +284,25 @@ function Imprimir(datos_cli){
     // const device  = new escpos.Serial('/dev/usb/lp0');
     let codigo_bar = datos_cli.turno.toString();
     let options = {
-      width: 5,
-      height: 190,
-      includeParity: false,
+      width: 3,
+      height: 50,
+      "includeParity": false,
       position: "OFF",
-      font:"B"
+      font:"A"
     }
     //Nombre para el ticket
-    let nombre1 = cortarNombre(datos_cli.nombre,1);
-    let nombre2 = cortarNombre(datos_cli.nombre,2);
-    let apellido1 = cortarNombre(datos_cli.nombre, 3);
-    let apellido2 = cortarNombre(datos_cli.nombre, 4);
+    let nombre1 = cortarNombre(datos_cli.nombre.replace("(FUNCIONARIO)", ""),1);
+    let nombre2 = cortarNombre(datos_cli.nombre.replace("(FUNCIONARIO)", ""),2);
+    let apellido1 = cortarNombre(datos_cli.nombre.replace("(FUNCIONARIO)",""), 3);
+    let apellido2 = cortarNombre(datos_cli.nombre.replace("(FUNCIONARIO)", ""), 4);
 
-    const options_fonts = { encoding: "ISO-8859-1" /* default */ }
+    const options_fonts = {encoding: "850"}
     const tux = path.join(__dirname, '/public/assets/img/logo_ticket.png');
     const printer = new escpos.Printer(device, options_fonts);
     escpos.Image.load(tux, function(image){
     device.open(function(error){
-      printer.align('CT')
+      printer
+      //.encode('EUC-KR')
       .size(1, 1)
       .text("¡Gracias por elegirnos!\n")
       .image(image, 's8')
@@ -274,21 +310,16 @@ function Imprimir(datos_cli){
          printer.font('A')
          printer.align('CT')
          printer.size(1, 2)
-         printer.text("\n");
          printer.text("...Bienvenido...");
-         printer.text(nombre1!=""?"\n":"");
          printer.size(1, 1)
          printer.text(nombre1+" "+nombre2);
          printer.text(apellido1+" "+apellido2);
-         printer.text(nombre1!=""?"\n":"");
-         //printer.text("Ingreso al local");
-         //printer.text(datos_cli.fecha)
          printer.size(1, 2)
          printer.text("Su turno es:");
-         printer.text("\n");
          printer.text(datos_cli.turno);
          printer.size(1, 1);
-         printer.barcode(datos_cli.turno, 'CODE39', options)
+         //printer.barcode(datos_cli.turno.length===1?"000000"+datos_cli.turno:"00000"+datos_cli.turno, 'CODE39', options);
+         printer.barcode(" "+datos_cli.turno+" ", 'CODE39', options);
          printer.text("\n\n\n");
          printer.cut().close();
       });
@@ -300,13 +331,6 @@ function cortarNombre(nombre, num){
     if(nombre_aux[(num-1)]==undefined){
       nombre_aux[(num-1)]="";
     }
-  return nombre_aux[(num-1)];
-}
-function cortarApellido(nombre, num){
-  let nombre_aux = nombre.split(' ');
-  if(nombre_aux[(num-1)]===undefined){
-    nombre_aux[(num-1)]="";
-  }
   return nombre_aux[(num-1)];
 }
 function getFecha() {
