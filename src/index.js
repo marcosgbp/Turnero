@@ -13,7 +13,7 @@ const fetch = require('node-fetch');
 // install escpos-usb adapter module manually
 escpos.USB = require('escpos-usb');
 
-const API_MARIJOA_PRO = "http://sistema.marijoa/marijoa/utils/turnero/RestControllerTurno.php?action=";
+const API_MARIJOA_PRO = "http://testing.marijoa/marijoa/utils/turnero/RestControllerTurno.php?action=";
 
 /**
  * Establecemos la conexiòn a la base de datos
@@ -45,7 +45,7 @@ app.use(cors({
 app.get('/getTurno/:turno', cors(),function (req, res, next) {
   let turno = req.params.turno;
   let usuario = req.query.usuario;
-  conexion.query(`SELECT * FROM turnos WHERE turno = ${turno} AND DATE_FORMAT(fecha_hora, "%Y-%m-%d") = DATE_FORMAT(NOW(), "%Y-%m-%d") ORDER BY id_turno DESC LIMIT 1`,(error, results, fields) =>{
+  conexion.query(`SELECT *, NOW() as fecha_hora_atendido FROM turnos WHERE turno = ${turno} AND DATE_FORMAT(fecha_hora, "%Y-%m-%d") = DATE_FORMAT(NOW(), "%Y-%m-%d") ORDER BY id_turno DESC LIMIT 1`,(error, results, fields) =>{
     if(error){
       console.log("Error al solicitar turno");
     }else{
@@ -140,7 +140,7 @@ io.on("connection", (socket) => {
         let ultTurno = results.length >= 1 ? results[0].ultimo_turno : 0;
         //Acá valido por si la base de datos no tiene valor va devolver null entonces el turno empieza de 1 y
         let turno = isNaN(ultTurno + 1) || ultTurno + 1 > 99 ? 1 : ultTurno + 1;
-        conexion.query('SELECT cod_cli, ci_ruc, nombre, tipo_doc FROM clientes WHERE ci_ruc LIKE "%' +input_ci +'%"',
+        conexion.query(`SELECT cod_cli, ci_ruc, nombre, tipo_doc FROM clientes WHERE ci_ruc = "${input_ci}" OR ci_ruc LIKE CONCAT("${input_ci}","%-%")`,
           (error, results, fields) => {
             if (error) {
               console.log("Error en la busqueda del cliente");
@@ -263,10 +263,7 @@ io.on("connection", (socket) => {
 
   //Busco el cliente
   socket.on("cliente:BuscarCliente", (input_ci) => {
-    conexion.query(
-      'SELECT ci_ruc, nombre FROM clientes WHERE ci_ruc LIKE "%' +
-        input_ci +
-        '%"',
+    conexion.query(`SELECT cod_cli, ci_ruc, nombre, tipo_doc FROM clientes WHERE ci_ruc = "${input_ci}" OR ci_ruc LIKE CONCAT("${input_ci}","%-%")`,
       (error, results, fields) => {
         if (error) {
           console.log("Error en la busqueda del cliente");
@@ -276,6 +273,10 @@ io.on("connection", (socket) => {
       }
     );
   });
+  //Esto se hace porque pasado cierto tiempo muere la conexión, .
+    setInterval(function () {
+      conexion.query('SELECT 1');
+    }, 50000);
 });
 function Imprimir(datos_cli){ 
     // Select the adapter based on your printer type
