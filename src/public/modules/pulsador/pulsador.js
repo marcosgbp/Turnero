@@ -24,7 +24,6 @@ btn_enviar.addEventListener("click", () => {
   }
   }
 });
-
 //Recibo el turno que corresponde
 socket.on("servidor:enviarTurno", (datos_cli) => {
   document.querySelector("#ci").value =""
@@ -62,7 +61,14 @@ socket.on("servidor:enviarTurno", (datos_cli) => {
     timer: 6000,
   });
 });
-
+//Recibo advertencia del servidor que la impresora no esta funcionando
+socket.on("servidor:problemaPrinter", ()=>{
+  Swal.fire(
+    '¡Verifica tu impresora por favor!',
+    'Podria esta apagado',
+    'warning'
+  )
+})
 //Capturo los valores de botones númericos
 btn_numbers.forEach((btn) => {
   btn.addEventListener("click", (e) => {

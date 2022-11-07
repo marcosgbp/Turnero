@@ -21,8 +21,8 @@ const API_MARIJOA_PRO = "http://testing.marijoa/marijoa/utils/turnero/RestContro
 var conexion = mysql.createConnection({
   host: "localhost",
   database: "turnero",
-  user: "root",
-  password: "",
+  user: "plus",
+  password: "rootdba",
 });
 
 conexion.connect(function (err) {
@@ -134,13 +134,15 @@ io.on("connection", (socket) => {
     );
   });
   socket.on("cliente:buscarUltTurno", (input_ci) => {
-    conexion.query("SELECT id_turno, turno as ultimo_turno FROM turnos WHERE DATE_FORMAT(fecha_hora, '%Y-%m-%d') = DATE_FORMAT(NOW(), '%Y-%m-%d') order by id_turno desc limit 1",
+    try {
+      VerficarConexionPrint();
+      conexion.query("SELECT id_turno, turno as ultimo_turno FROM turnos WHERE DATE_FORMAT(fecha_hora, '%Y-%m-%d') = DATE_FORMAT(NOW(), '%Y-%m-%d') order by id_turno desc limit 1",
       (error, results, fields) => {
         if (error) throw error;
         let ultTurno = results.length >= 1 ? results[0].ultimo_turno : 0;
         //Acá valido por si la base de datos no tiene valor va devolver null entonces el turno empieza de 1 y
         let turno = isNaN(ultTurno + 1) || ultTurno + 1 > 99 ? 1 : ultTurno + 1;
-        conexion.query(`SELECT cod_cli, ci_ruc, nombre, tipo_doc FROM clientes WHERE ci_ruc = "${input_ci}" OR ci_ruc LIKE CONCAT("${input_ci}","%-%")`,
+        conexion.query(`SELECT cod_cli, ci_ruc, nombre, tipo_doc FROM clientes WHERE ci_ruc = "${input_ci}" OR ci_ruc LIKE CONCAT("${input_ci}","-%")`,
           (error, results, fields) => {
             if (error) {
               console.log("Error en la busqueda del cliente");
@@ -170,7 +172,12 @@ io.on("connection", (socket) => {
                       fecha: getFecha(),
                     };
                     socket.emit("servidor:enviarTurno", datos_cli);
-                    Imprimir(datos_cli);
+                    try {
+                      Imprimir(datos_cli);
+                    } catch (error) {
+                     console.log("Verifica tu impresora")
+                    }
+                    
                   }
                 }
               );
@@ -189,6 +196,11 @@ io.on("connection", (socket) => {
         );
       }
     );
+    } catch (error) {
+      socket.emit("servidor:problemaPrinter")
+      console.log("Verifica la conexión hermano")
+    }
+
   });
   //Llamo el turno menor del día con estado pendiente
   socket.on("cliente:LlamarTurno", () => {
@@ -352,6 +364,18 @@ function getFecha() {
 
   fechaImprimible = dia+"/"+mes+"/"+anho+"  "+hora+":"+minuto+":"+segundo
   return fechaImprimible;
+}
+
+function VerficarConexionPrint(){
+  const device  = new escpos.USB();
+  const printer = new escpos.Printer(device);
+  device.open(function (error) {
+    if (error) {
+        console.error( "Esto ento loco "+error);
+        return;
+    }
+    printer.close();
+});
 }
 server.listen(3000);
 console.log("Servidor corriendo en el puerto", 3000);
